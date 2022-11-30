@@ -1,6 +1,9 @@
 <launch>
+    <node name="table_broadcaster" pkg="tf2_ros" type="static_transform_publisher" required="true" args="1 0 0 0 0 0 1 base table" />
 
+    <node name="enable" pkg="intera_interface" type="enable_robot.py" required="true" output="screen" args="-e" />
 
-<node pkg="tf2_ros" type="static_transform_publisher" name="table_broadcaster" args="1 0 0 0 0 0 1 base table" />
+    <node name="cam_listener" pkg="lab4_cam" type="camera_srv_Sawyer.py" required="true" output="screen" args="" />
 
+    <node name="object_server" pkg="sensing" type="object_server.py" required="true" output="screen" args="" />
 </launch>

@@ -8,21 +8,24 @@ import cv2
 import numpy as np
 
 from util import *
-from sensing.srv import ImageSrv, CamInfoSrv, CentroidSrv, CentroidResponse
+from sensing.srv import ImageSrv, CamInfoSrv, ObjectSrv, ObjectSrvResponse
 
 
-class CentroidServer:
+class ObjectServer:
     def __init__(self):
-        rospy.init_node('centroid_server', anonymous=True)
-        rospy.Service('centroids', CentroidSrv, self.get_centroids)
+        rospy.init_node('object_server')
+        rospy.Service('objects', ObjectSrv, self.get_centroids)
 
         # setup tf
         self.tf_buffer = tf.Buffer()
         self.tf_listener = tf.TransformListener(self.tf_buffer)
+    
+    def run(self):
+        rospy.spin()
 
     def get_centroids(self, _):
         centroids = self._get_centroids()
-        return CentroidResponse(centroids)
+        return ObjectSrvResponse(centroids)
 
     def _get_centroids(self):
         # dependency services
@@ -153,5 +156,5 @@ class CentroidServer:
         cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    node = CentroidServer()
-    rospy.spin()
+    node = ObjectServer()
+    node.run()
