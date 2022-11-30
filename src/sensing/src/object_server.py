@@ -115,9 +115,10 @@ class ObjectServer:
         cv2.waitKey(0)
 
         # threshold
-        hue = 90
-        hue_range = 20
-        hued = cv2.inRange(hsv, (hue-hue_range, 80, 80), (hue+hue_range, 255, 255))
+        hue_lo, hue_hi = rospy.get_param('~hue_lo'), rospy.get_param('~hue_hi')
+        sat_lo, sat_hi = rospy.get_param('~sat_lo'), rospy.get_param('~sat_hi')
+        val_lo, val_hi = rospy.get_param('~val_lo'), rospy.get_param('~val_hi')
+        hued = cv2.inRange(hsv, (hue_lo, sat_lo, val_lo), (hue_hi, sat_hi, val_hi))
 
         masked = (hued[:, :, None] != 0) * hsv
         debug = cv2.cvtColor(masked, cv2.COLOR_HSV2BGR)
@@ -157,7 +158,7 @@ class ObjectServer:
             cX = int(M["m10"] / M["m00"])
             cY = int(M["m01"] / M["m00"])
             centroids2D.append((cX, cY))
-            
+
             rx, ry, rz = headcam.projectPixelTo3dRay(headcam.rectifyPoint((cX, cY)))
             head_r = np.array([rx, ry, rz, 1])
             r = ray = (self.head2base @ head_r)[:3]   # ray equation: x = p + lam * r

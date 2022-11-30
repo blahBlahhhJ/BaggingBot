@@ -8,7 +8,6 @@
     <arg name="caminfo_service" default="/sensing/caminfo"/>
     <arg name="object_service" default="/sensing/objects"/>
     
-
     <!-- parameter server -->
     <param name="frames/base" value="$(arg base_frame)"/>
     <param name="frames/table" value="$(arg table_frame)"/>
@@ -19,7 +18,7 @@
     <param name="services/object" value="$(arg object_service)"/>
     
     <!-- bringup sawyer and set to initial config -->
-    <node name="enable" pkg="intera_interface" type="enable_robot.py" 
+    <node name="sawyer_bringup" pkg="intera_interface" type="enable_robot.py" 
     output="screen" args="-e" />
     <include file="(find intera_examples)/launch/sawyer_tuck.launch"/>
     
@@ -31,5 +30,12 @@
     <node name="camera_server" pkg="sensing" type="camera_server.py" 
     required="true" output="screen" args="" />
     <node name="object_server" pkg="sensing" type="object_server.py" 
-    required="true" output="screen" args="" />
+    required="true" output="screen" args="">
+        <param name="hue_lo" type="int" value="70"/>
+        <param name="hue_hi" type="int" value="110"/>
+        <param name="sat_lo" type="int" value="80"/>
+        <param name="sat_hi" type="int" value="255"/>
+        <param name="val_lo" type="int" value="80"/>
+        <param name="val_hi" type="int" value="255"/>
+    <node/>
 </launch>
