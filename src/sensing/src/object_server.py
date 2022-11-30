@@ -2,12 +2,12 @@
 import rospy
 import tf2_ros as tf
 import image_geometry
-import ros_numpy
 from geometry_msgs.msg import Point
 
 import cv2
 import numpy as np
 
+import ros_numpy
 from util import *
 from sensing.srv import ImageSrv, CamInfoSrv, ObjectSrv, ObjectSrvResponse
 
@@ -15,7 +15,11 @@ from sensing.srv import ImageSrv, CamInfoSrv, ObjectSrv, ObjectSrvResponse
 class ObjectServer:
     def __init__(self):
         rospy.init_node('object_server')
-        rospy.Service('objects', ObjectSrv, self.get_centroids)
+
+        if not self._load_parameters():
+            return
+
+        rospy.Service(self._object_service, ObjectSrv, self.get_centroids)
 
         # setup tf
         self.tf_buffer = tf.Buffer()
@@ -28,10 +32,24 @@ class ObjectServer:
         centroids = self._get_centroids()
         return ObjectSrvResponse(centroids)
 
+    def _load_parameters(self):
+        try:
+            self._image_service = rospy.get_param('services/image')
+            self._caminfo_service = rospy.get_param('services/caminfo')
+            self._object_service = rospy.get_param('services/object')
+
+            self._base_frame = rospy.get_param('frames/base')
+            self._head_frame = rospy.get_param('frames/head')
+            self._table_frame = rospy.get_param('frames/table')
+            return True
+        except rospy.ROSException as e:
+            print(e)
+            return False
+
     def _get_centroids(self):
         # dependency services
-        rospy.wait_for_service('image')
-        rospy.wait_for_service('caminfo')
+        rospy.wait_for_service(self._image_service)
+        rospy.wait_for_service(self._caminfo_service)
 
         try:
             # cv stuff
@@ -76,7 +94,7 @@ class ObjectServer:
         return ros_numpy.numpify(self.tf_buffer.lookup_transform(target, source, t).transform) # this is se3
 
     def _get_image(self):
-        image_proxy = rospy.ServiceProxy('image', ImageSrv)
+        image_proxy = rospy.ServiceProxy(self._image_service, ImageSrv)
         return ros_numpy.numpify(image_proxy().image_data)
     
     def _process_contours(self, img):
@@ -117,14 +135,14 @@ class ObjectServer:
         centroids2D = []
         centroids3D = []
 
-        caminfo_proxy = rospy.ServiceProxy('caminfo', CamInfoSrv)
+        caminfo_proxy = rospy.ServiceProxy(self._caminfo_service, CamInfoSrv)
         caminfo = caminfo_proxy().cam_info
 
         headcam = image_geometry.PinholeCameraModel()
         headcam.fromCameraInfo(caminfo)
 
-        self.head2base = self._get_transform('reference/head_camera', 'base')
-        self.table2base = self._get_transform('table', 'base')
+        self.head2base = self._get_transform(self._head_frame, self._base_frame)
+        self.table2base = self._get_transform(self._table_frame, self._base_frame)
 
         origin = np.array([0, 0, 0, 1])
         normal = np.array([0, 0, 1, 1])
@@ -139,6 +157,7 @@ class ObjectServer:
             cX = int(M["m10"] / M["m00"])
             cY = int(M["m01"] / M["m00"])
             centroids2D.append((cX, cY))
+            
             rx, ry, rz = headcam.projectPixelTo3dRay(headcam.rectifyPoint((cX, cY)))
             head_r = np.array([rx, ry, rz, 1])
             r = ray = (self.head2base @ head_r)[:3]   # ray equation: x = p + lam * r
@@ -166,4 +185,5 @@ class ObjectServer:
 
 if __name__ == "__main__":
     node = ObjectServer()
-    node.run()
+    if node:
+        node.run()

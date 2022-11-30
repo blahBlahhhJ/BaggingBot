@@ -15,14 +15,17 @@ class CameraServer:
     def __init__(self):
         rospy.init_node('camera_server')
 
+        if not self._load_parameters():
+            return
+
         rospy.Subscriber("/io/internal_camera/head_camera/image_rect_color", Image, self.imgReceived)
         rospy.Subscriber("/io/internal_camera/head_camera/camera_info", CameraInfo, self.camInfoReceived)
 
-        rospy.Service('image', ImageSrv, self.getLastImage)
-        rospy.Service('caminfo', CamInfoSrv, self.getLastCamInfo)
+        rospy.Service(self._image_service, ImageSrv, self.getLastImage)
+        rospy.Service(self._caminfo_service, CamInfoSrv, self.getLastCamInfo)
     
     def run(self):
-        self.activate_head()
+        self._activate_head()
         rospy.spin()
 
     def imgReceived(self, message):
@@ -37,7 +40,7 @@ class CameraServer:
     def getLastCamInfo(self, request):
         return CamInfoSrvResponse(self.lastCamInfo)
 
-    def activate_head(self, timeout=0.0):
+    def _activate_head(self, timeout=0.0):
         rospy.wait_for_service('/io/internal_camera/head_camera/command')
         try:
             head_cam_control = rospy.ServiceProxy('/io/internal_camera/head_camera/command', IOComponentCommandSrv)
@@ -52,11 +55,18 @@ class CameraServer:
         except rospy.ServiceException as e:
             print("Service call failed: %s"%e)
 
-
-
+    def _load_parameters(self):
+        try:
+            self._image_service = rospy.get_param('services/image')
+            self._caminfo_service = rospy.get_param('services/caminfo')
+            return True
+        except rospy.ROSException as e:
+            print(e)
+            return False
 
 
 if __name__ == "__main__":
     node = CameraServer()
-    node.run()
+    if node:
+        node.run()
     
