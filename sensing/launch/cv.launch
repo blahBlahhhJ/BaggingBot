@@ -1,0 +1,6 @@
+<launch>
+
+
+<node pkg="tf2_ros" type="static_transform_publisher" name="table_broadcaster" args="1 0 0 0 0 0 1 base table" />
+
+</launch>
