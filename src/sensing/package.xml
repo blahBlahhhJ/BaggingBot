@@ -49,6 +49,7 @@
   <!-- Use doc_depend for packages you need only for building documentation: -->
   <!--   <doc_depend>doxygen</doc_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>intera_core_msgs</build_depend>
   <build_depend>baxter_tools</build_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>image_geometry</build_depend>
@@ -59,6 +60,7 @@
   <build_depend>sensor_msgs</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_depend>tf2_ros</build_depend>
+  <build_export_depend>intera_core_msgs</build_export_depend>
   <build_export_depend>baxter_tools</build_export_depend>
   <build_export_depend>geometry_msgs</build_export_depend>
   <build_export_depend>image_geometry</build_export_depend>
@@ -69,6 +71,7 @@
   <build_export_depend>sensor_msgs</build_export_depend>
   <build_export_depend>std_msgs</build_export_depend>
   <build_export_depend>tf2_ros</build_export_depend>
+  <exec_depend>intera_core_msgs</exec_depend>
   <exec_depend>baxter_tools</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>image_geometry</exec_depend>

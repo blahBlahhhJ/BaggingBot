@@ -14,3 +14,5 @@ ee106a final project
 
 ### Planning
 Not designed yet. maybe follow lab7 structure?
+
+### guess what this is

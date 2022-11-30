@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 import rospy
 import tf2_ros as tf
 import image_geometry
@@ -56,10 +57,10 @@ class ObjectServer:
         except tf.ExtrapolationException:
             print('extrapolation exception!')
             return []
-        except Exception as e:
-            print('unrecognized error')
-            print(e)
-            return []
+        # except Exception as e:
+        #     print('unrecognized error')
+        #     print(e)
+        #     return []
 
         return centroids3D
 
@@ -72,18 +73,18 @@ class ObjectServer:
             r.sleep()
         print('retrieved tf transform:', source, target)
         
-        return ros_numpy.numpify(self.tf_buffer.lookupTransform(target, source, t).transform) # this is se3
+        return ros_numpy.numpify(self.tf_buffer.lookup_transform(target, source, t).transform) # this is se3
 
-    def _get_image():
+    def _get_image(self):
         image_proxy = rospy.ServiceProxy('image', ImageSrv)
         return ros_numpy.numpify(image_proxy().image_data)
     
-    def _process_contours(img):
+    def _process_contours(self, img):
         # blur
         blur = cv2.medianBlur(img, 9)
 
         # saturation
-        hsv = cv2.cvtColor(blur, cv2.COLOR_RGB2HSV)
+        hsv = cv2.cvtColor(blur, cv2.COLOR_BGR2HSV)
         h, s, v = cv2.split(hsv)
         value = 100
         lim = 255 - value
@@ -91,13 +92,22 @@ class ObjectServer:
         s[s <= lim] += value
         hsv = cv2.merge((h, s, v))
 
+        debug = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+        cv2.imshow("debug_hsv", debug)
+        cv2.waitKey(0)
+
         # threshold
-        hue = 70
+        hue = 90
         hue_range = 20
         hued = cv2.inRange(hsv, (hue-hue_range, 80, 80), (hue+hue_range, 255, 255))
 
+        masked = (hued[:, :, None] != 0) * hsv
+        debug = cv2.cvtColor(masked, cv2.COLOR_HSV2BGR)
+        cv2.imshow("debug_threshold", debug)
+        cv2.waitKey(0)
+
         # contour
-        _, contours, hierarchy = cv2.findContours(hued, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        contours, hierarchy = cv2.findContours(hued, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         thresh = 25
         filtered = [cnt for cnt in contours if cv2.contourArea(cnt) > thresh]
         print('got', str(len(filtered)), 'contours')
@@ -113,7 +123,7 @@ class ObjectServer:
         headcam = image_geometry.PinholeCameraModel()
         headcam.fromCameraInfo(caminfo)
 
-        self.head2base = self._get_transform('head_camera', 'base')
+        self.head2base = self._get_transform('reference/head_camera', 'base')
         self.table2base = self._get_transform('table', 'base')
 
         origin = np.array([0, 0, 0, 1])
@@ -129,8 +139,9 @@ class ObjectServer:
             cX = int(M["m10"] / M["m00"])
             cY = int(M["m01"] / M["m00"])
             centroids2D.append((cX, cY))
-
-            r = ray = (self.head2base @ headcam.projectPixelTo3dRay(headcam.rectifyPoint((cX, cY))))[:3]   # ray equation: x = p + lam * r
+            rx, ry, rz = headcam.projectPixelTo3dRay(headcam.rectifyPoint((cX, cY)))
+            head_r = np.array([rx, ry, rz, 1])
+            r = ray = (self.head2base @ head_r)[:3]   # ray equation: x = p + lam * r
 
             # solve for ray-table intersection: w(p + lambda * r) + b = 0
             lam = (-b - w@p) / (w@r)
@@ -141,17 +152,15 @@ class ObjectServer:
             point = Point(centroid[0], centroid[1], centroid[2])
             centroids3D.append(point)
 
-        return centroids3D
+        return centroids2D, centroids3D
 
-    def cv_debug(img, contours, centroids2D):
-        img_bgr = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-
-        cv2.drawContours(img_bgr, contours, -1, (0, 255, 0, 2))
+    def cv_debug(self, img, contours, centroids2D):
+        cv2.drawContours(img, contours, -1, (0, 255, 0, 2))
 
         for centroid in centroids2D:
-            cv2.circle(img_bgr, centroid, 1, (0, 0, 255), 2)
+            cv2.circle(img, centroid, 1, (0, 0, 255), 2)
 
-        cv2.imshow("debug", img_bgr)
+        cv2.imshow("debug", img)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 

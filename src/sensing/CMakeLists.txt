@@ -8,6 +8,7 @@ project(sensing)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  intera_core_msgs
   baxter_tools
   geometry_msgs
   image_geometry
