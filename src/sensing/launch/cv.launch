@@ -31,6 +31,10 @@
     required="true" output="screen" args="" />
     <node name="object_server" pkg="sensing" type="object_server.py" 
     required="true" output="screen" args="">
+        <param name="x_lo" type="int" value="70"/>
+        <param name="x_hi" type="int" value="110"/>
+        <param name="y_lo" type="int" value="80"/>
+        <param name="y_hi" type="int" value="255"/>
         <param name="hue_lo" type="int" value="70"/>
         <param name="hue_hi" type="int" value="110"/>
         <param name="sat_lo" type="int" value="80"/>

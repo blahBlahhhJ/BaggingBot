@@ -119,13 +119,23 @@ class ObjectServer:
         val_lo, val_hi = rospy.get_param('~val_lo'), rospy.get_param('~val_hi')
         hued = cv2.inRange(hsv, (hue_lo, sat_lo, val_lo), (hue_hi, sat_hi, val_hi))
 
-        masked = (hued[:, :, None] != 0) * hsv
-        debug = cv2.cvtColor(masked, cv2.COLOR_HSV2BGR)
+        debug = cv2.cvtColor((hued[:, :, None] != 0) * hsv, cv2.COLOR_HSV2BGR)
         cv2.imshow("debug_threshold", debug)
         cv2.waitKey(0)
 
+        # mask
+        x_lo, x_hi = rospy.get_param('~x_lo'), rospy.get_param('~x_hi')
+        y_lo, y_hi = rospy.get_param('~y_lo'), rospy.get_param('~y_hi')
+        table_mask = np.zeros_like(hued)
+        table_mask[x_lo:x_hi, y_lo:y_hi] = 1
+        masked = table_mask * hued
+
+        debug = cv2.cvtColor(masked[:, :, None] * hsv, cv2.COLOR_HSV2BGR)
+        cv2.imshow("debug_mask", debug)
+        cv2.waitKey(0)
+        
         # contour
-        contours, hierarchy = cv2.findContours(hued, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(hued, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         thresh = 25
         filtered = [cnt for cnt in contours if cv2.contourArea(cnt) > thresh]
         print('got', str(len(filtered)), 'contours')
