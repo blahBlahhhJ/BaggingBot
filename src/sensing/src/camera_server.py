@@ -11,7 +11,6 @@ from intera_core_msgs.msg._IOComponentCommand import IOComponentCommand
 from sensing.srv import ImageSrv, ImageSrvResponse, CamInfoSrv, CamInfoSrvResponse
 
 class CameraServer:
-    
     def __init__(self):
         rospy.init_node('camera_server')
 

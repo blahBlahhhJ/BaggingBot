@@ -8,7 +8,6 @@ import cv2
 import numpy as np
 
 import ros_numpy
-from util import *
 from sensing.srv import ImageSrv, CamInfoSrv, ObjectSrv, ObjectSrvResponse
 
 
@@ -29,6 +28,10 @@ class ObjectServer:
         rospy.spin()
 
     def get_centroids(self, _):
+        # dependency services
+        rospy.wait_for_service(self._image_service)
+        rospy.wait_for_service(self._caminfo_service)
+
         centroids = self._get_centroids()
         return ObjectSrvResponse(centroids)
 
@@ -47,10 +50,6 @@ class ObjectServer:
             return False
 
     def _get_centroids(self):
-        # dependency services
-        rospy.wait_for_service(self._image_service)
-        rospy.wait_for_service(self._caminfo_service)
-
         try:
             # cv stuff
             img = self._get_image()
