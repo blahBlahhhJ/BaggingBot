@@ -16,3 +16,8 @@ ee106a final project
 Not designed yet. maybe follow lab7 structure?
 
 ### guess what this is
+
+
+notes: 
+1. sreset
+2. blue and green works

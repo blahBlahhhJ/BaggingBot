@@ -20,31 +20,32 @@
     <!-- bringup sawyer and set to initial config -->
     <node name="sawyer_bringup" pkg="intera_interface" type="enable_robot.py" 
     output="screen" args="-e" />
-    <include file="(find intera_examples)/launch/sawyer_tuck.launch"/>
+    <include file="$(find intera_examples)/launch/sawyer_tuck.launch"/>
     <node name="action_server" pkg="intera_interface" type="joint_trajectory_action_server.py"
     required="true" output="screen" args=""/>
-    <include file="(find sawyer_moveit_config)/launch/sawyer_moveit.launch">
+    <include file="$(find sawyer_moveit_config)/launch/sawyer_moveit.launch">
         <arg name="electric_gripper" value="true" />
     </include>
     
     <!-- static table frame -->
     <node name="table_broadcaster" pkg="tf2_ros" type="static_transform_publisher" 
-    required="true" args="1 0 0 0 0 0 1 base table" />
+    required="true" args="0.738, 0.243, -0.159 0 0 0 1 base table" />
 
     <!-- cv nodes -->
     <node name="camera_server" pkg="sensing" type="camera_server.py" 
     required="true" output="screen" args="" />
     <node name="object_server" pkg="sensing" type="object_server.py" 
     required="true" output="screen" args="">
-        <param name="x_lo" type="int" value="70"/>
-        <param name="x_hi" type="int" value="110"/>
-        <param name="y_lo" type="int" value="80"/>
-        <param name="y_hi" type="int" value="255"/>
+        <param name="x_lo" type="int" value="470"/>
+        <param name="x_hi" type="int" value="600"/>
+        <param name="y_lo" type="int" value="480"/>
+        <param name="y_hi" type="int" value="1000"/>
         <param name="hue_lo" type="int" value="70"/>
         <param name="hue_hi" type="int" value="110"/>
         <param name="sat_lo" type="int" value="80"/>
         <param name="sat_hi" type="int" value="255"/>
         <param name="val_lo" type="int" value="80"/>
         <param name="val_hi" type="int" value="255"/>
-    <node/>
+        <param name="cube_size" type="double" value="0.04"/>
+    </node>
 </launch>

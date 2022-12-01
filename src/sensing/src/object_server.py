@@ -3,7 +3,7 @@ import rospy
 import tf2_ros as tf
 import image_geometry
 from geometry_msgs.msg import Point
-from visualization_msgs.msg import Marker, MarkerArray
+from visualization_msgs.msg import Marker
 
 import cv2
 import numpy as np
@@ -20,7 +20,7 @@ class ObjectServer:
             return
 
         rospy.Service(self._object_service, ObjectSrv, self.get_centroids)
-        self.markers_pub = rospy.Publisher('object_marker', MarkerArray, queue_size=10)
+        self.marker_pub = rospy.Publisher('object_marker', Marker, queue_size=10)
 
         # setup tf
         self.tf_buffer = tf.Buffer()
@@ -130,14 +130,15 @@ class ObjectServer:
         y_lo, y_hi = rospy.get_param('~y_lo'), rospy.get_param('~y_hi')
         table_mask = np.zeros_like(hued)
         table_mask[x_lo:x_hi, y_lo:y_hi] = 1
+        print(table_mask.shape, hued.shape)
         masked = table_mask * hued
 
-        debug = cv2.cvtColor(masked[:, :, None] * hsv, cv2.COLOR_HSV2BGR)
+        debug = cv2.cvtColor((masked[:, :, None] != 0) * hsv, cv2.COLOR_HSV2BGR)
         cv2.imshow("debug_mask", debug)
         cv2.waitKey(0)
         
         # contour
-        contours, _ = cv2.findContours(hued, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(masked, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         thresh = 25
         filtered = [cnt for cnt in contours if cv2.contourArea(cnt) > thresh]
         print('got', str(len(filtered)), 'contours')
@@ -146,7 +147,6 @@ class ObjectServer:
     def _process_centroids(self, contours):
         centroids2D = []
         centroids3D = []
-        marker_array = MarkerArray()
 
         caminfo_proxy = rospy.ServiceProxy(self._caminfo_service, CamInfoSrv)
         caminfo = caminfo_proxy().cam_info
@@ -158,10 +158,12 @@ class ObjectServer:
         self.table2base = self._get_transform(self._table_frame, self._base_frame)
 
         origin = np.array([0, 0, 0, 1])
-        normal = np.array([0, 0, 1, 1])
+        normal = np.array([0, 0, 1, 0])
 
+        cube_size = rospy.get_param('~cube_size')
         p = head_origin = (self.head2base @ origin)[:3]
         x = table_origin = (self.table2base @ origin)[:3]
+        x[2] += cube_size # use table+cube height plane
         w = table_normal = (self.table2base @ normal)[:3]
         b = -w @ x  # table equation: wx + b = 0
 
@@ -172,7 +174,7 @@ class ObjectServer:
             centroids2D.append((cX, cY))
 
             rx, ry, rz = headcam.projectPixelTo3dRay(headcam.rectifyPoint((cX, cY)))
-            head_r = np.array([rx, ry, rz, 1])
+            head_r = np.array([rx, ry, rz, 0])
             r = ray = (self.head2base @ head_r)[:3]   # ray equation: x = p + lam * r
 
             # solve for ray-table intersection: w(p + lambda * r) + b = 0
@@ -184,42 +186,45 @@ class ObjectServer:
             point = Point(centroid[0], centroid[1], centroid[2])
             centroids3D.append(point)
 
-            marker_array.markers.append(self._generate_cube(point, i))
-            marker_array.markers.append(self._generate_ray(Point(head_origin[0], head_origin[1], head_origin[2]), point, i))
-
-        self.markers_pub.publish(marker_array)
+            self._generate_cube(point, i)
+            self._generate_ray(Point(head_origin[0], head_origin[1], head_origin[2]), point, i)
 
         return centroids2D, centroids3D
 
     def _generate_cube(self, point, i):
         marker = Marker()
-        marker.header.frame_id = "object"
+        marker.header.frame_id = self._base_frame
         marker.header.stamp = rospy.get_rostime()
         marker.pose.position = point
+        marker.ns = 'cube'
         marker.id = i
         marker.type = 1
         marker.pose.orientation.x = 0
         marker.pose.orientation.y = 0
         marker.pose.orientation.z = 0
         marker.pose.orientation.w = 1.0
-        marker.scale.x = 0.1
-        marker.scale.y = 0.1
-        marker.scale.z = 0.1
+        marker.scale.x = 0.04
+        marker.scale.y = 0.04
+        marker.scale.z = 0.04
 
         marker.color.r = 0.0
         marker.color.g = 1.0
         marker.color.b = 0.0
         marker.color.a = 1.0
-        marker.lifetime = 5000
-        return marker
+        self.marker_pub.publish(marker)
 
     def _generate_ray(self, start, end, i):
         marker = Marker()
-        marker.header.frame_id = "ray"
+        marker.header.frame_id = self._base_frame
         marker.header.stamp = rospy.get_rostime()
         marker.points = [start, end]
+        marker.ns = 'ray'
         marker.id = i
         marker.type = 0
+        marker.pose.orientation.x = 0
+        marker.pose.orientation.y = 0
+        marker.pose.orientation.z = 0
+        marker.pose.orientation.w = 1.0
         marker.scale.x = 0.01
         marker.scale.y = 0.03
         marker.scale.z = 0.05
@@ -228,8 +233,7 @@ class ObjectServer:
         marker.color.g = 0.0
         marker.color.b = 0.0
         marker.color.a = 1.0
-        marker.lifetime = 5000
-        return marker
+        self.marker_pub.publish(marker)
 
     def cv_debug(self, img, contours, centroids2D):
         cv2.drawContours(img, contours, -1, (0, 255, 0, 2))
