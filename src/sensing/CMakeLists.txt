@@ -69,6 +69,7 @@ add_service_files(
   CamInfoSrv.srv
   ImageSrv.srv
   ObjectSrv.srv
+  BagSrv.srv
 )
 
 ## Generate actions in the 'action' folder
