@@ -131,6 +131,8 @@ class BagServer:
     def _process_centroids(self, contours):
         centroids2D = []
         centroids3D = []
+        handleLeft = []
+        handleRight = []
 
         caminfo_proxy = rospy.ServiceProxy(self._caminfo_service, CamInfoSrv)
         caminfo = caminfo_proxy().cam_info
@@ -145,6 +147,9 @@ class BagServer:
         normal = np.array([0, 0, 1, 0])
 
         bag_height = rospy.get_param('~bag_height')
+        bag_width = rospy.get_param('~bag_width')
+        bag_handle_height = rospy.get_param('~bag_handle_height')
+
         p = head_origin = (self.head2base @ origin)[:3]
         x = table_origin = (self.table2base @ origin)[:3]
         x[2] += bag_height # use table+cube height plane
@@ -170,6 +175,14 @@ class BagServer:
             point = Point(centroid[0], centroid[1], centroid[2])
             centroids3D.append(point)
 
+            handleLeftPoint = Point(centroid[0], centroid[1] + bag_width / 2, centroid[2] + bag_handle_height / 2)
+            handleRightPoint = Point(centroid[0], centroid[1] - bag_width / 2, centroid[2] + bag_handle_height / 2)
+            handleLeft.append(handleLeftPoint)
+            handleRight.append(handleRightPoint)
+
+            self._generate_bag_handle(handleLeftPoint, i, "l")
+            self._generate_bag_handle(handleLeftPoint, i, "r")
+
             self._generate_bag(point, i)
             self._generate_ray(Point(head_origin[0], head_origin[1], head_origin[2]), point, i)
 
@@ -189,7 +202,7 @@ class BagServer:
         marker.pose.orientation.w = 1.0
         marker.scale.x = 0.30
         marker.scale.y = 0.15
-        marker.scale.z = 0.35
+        marker.scale.z = rospy.get_param('~bag_height')
 
         marker.color.r = 0.0
         marker.color.g = 1.0
@@ -215,6 +228,28 @@ class BagServer:
 
         marker.color.r = 1.0
         marker.color.g = 0.0
+        marker.color.b = 0.0
+        marker.color.a = 1.0
+        self.marker_pub.publish(marker)
+
+    def _generate_bag_handle(self, point, i, pos_name):
+        marker = Marker()
+        marker.header.frame_id = self._base_frame
+        marker.header.stamp = rospy.get_rostime()
+        marker.pose.position = point
+        marker.ns = 'bag_handle/' + pos_name
+        marker.id = i
+        marker.type = 1
+        marker.pose.orientation.x = 0
+        marker.pose.orientation.y = 0
+        marker.pose.orientation.z = 0
+        marker.pose.orientation.w = 1.0
+        marker.scale.x = 0.05
+        marker.scale.y = 0.01
+        marker.scale.z = rospy.get_param('~bag_handle_height')
+
+        marker.color.r = 0.0
+        marker.color.g = 1.0
         marker.color.b = 0.0
         marker.color.a = 1.0
         self.marker_pub.publish(marker)

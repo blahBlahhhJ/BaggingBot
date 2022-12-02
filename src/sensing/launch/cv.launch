@@ -62,6 +62,9 @@
         <param name="bag_sat_hi" type="int" value="255"/>
         <param name="bag_val_lo" type="int" value="0"/>
         <param name="bag_val_hi" type="int" value="255"/>
-        <param name="bag_height" type="double" value="0.04"/>
+        <param name="bag_height" type="double" value="0.35"/>
+        <param name="bag_length" type="double" value="0.30"/>
+        <param name="bag_width" type="double" value="0.15"/>
+        <param name="bag_handle_height" type="double" value="0.10"/>
     </node>
 </launch>
