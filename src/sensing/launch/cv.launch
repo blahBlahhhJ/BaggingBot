@@ -2,11 +2,12 @@
     <!-- arguments -->
     <arg name="base_frame" default="base"/>
     <arg name="table_frame" default="table"/>
-    <arg name="head_frame" default="head_camera"/>
+    <arg name="head_frame" default="reference/head_camera"/>
 
     <arg name="image_service" default="/sensing/image"/>
     <arg name="caminfo_service" default="/sensing/caminfo"/>
     <arg name="object_service" default="/sensing/objects"/>
+    <arg name="bag_service" default="/sensing/bag"/>
     
     <!-- parameter server -->
     <param name="frames/base" value="$(arg base_frame)"/>
@@ -16,6 +17,7 @@
     <param name="services/image" value="$(arg image_service)"/>
     <param name="services/caminfo" value="$(arg caminfo_service)"/>
     <param name="services/object" value="$(arg object_service)"/>
+    <param name="services/bag" value="$(arg bag_service)"/>
     
     <!-- bringup sawyer and set to initial config -->
     <node name="sawyer_bringup" pkg="intera_interface" type="enable_robot.py" 
@@ -39,7 +41,7 @@
         <param name="x_lo" type="int" value="470"/>
         <param name="x_hi" type="int" value="600"/>
         <param name="y_lo" type="int" value="480"/>
-        <param name="y_hi" type="int" value="1000"/>
+        <param name="y_hi" type="int" value="670"/>
         <param name="hue_lo" type="int" value="70"/>
         <param name="hue_hi" type="int" value="110"/>
         <param name="sat_lo" type="int" value="80"/>
@@ -47,5 +49,22 @@
         <param name="val_lo" type="int" value="80"/>
         <param name="val_hi" type="int" value="255"/>
         <param name="cube_size" type="double" value="0.04"/>
+    </node>
+     <node name="bag_server" pkg="sensing" type="bag_server.py" 
+    required="true" output="screen" args="">
+        <param name="x_lo" type="int" value="470"/>
+        <param name="x_hi" type="int" value="600"/>
+        <param name="y_lo" type="int" value="670"/>
+        <param name="y_hi" type="int" value="1000"/>
+        <param name="hue_lo" type="int" value="70"/>
+        <param name="hue_hi" type="int" value="110"/>
+        <param name="sat_lo" type="int" value="80"/>
+        <param name="sat_hi" type="int" value="255"/>
+        <param name="val_lo" type="int" value="80"/>
+        <param name="val_hi" type="int" value="255"/>
+        <param name="bag_height" type="double" value="0.35"/>
+        <param name="bag_length" type="double" value="0.30"/>
+        <param name="bag_width" type="double" value="0.15"/>
+        <param name="bag_handle_offset" type="double" value="0.03"/>
     </node>
 </launch>
