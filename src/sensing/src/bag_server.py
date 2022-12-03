@@ -100,9 +100,9 @@ class BagServer:
         cv2.waitKey(0)
 
         # threshold
-        hue_lo, hue_hi = rospy.get_param('~bag_hue_lo'), rospy.get_param('~bag_hue_hi')
-        sat_lo, sat_hi = rospy.get_param('~bag_sat_lo'), rospy.get_param('~bag_sat_hi')
-        val_lo, val_hi = rospy.get_param('~bag_val_lo'), rospy.get_param('~bag_val_hi')
+        hue_lo, hue_hi = rospy.get_param('~hue_lo'), rospy.get_param('~hue_hi')
+        sat_lo, sat_hi = rospy.get_param('~sat_lo'), rospy.get_param('~sat_hi')
+        val_lo, val_hi = rospy.get_param('~val_lo'), rospy.get_param('~val_hi')
         hued = cv2.inRange(hsv, (hue_lo, sat_lo, val_lo), (hue_hi, sat_hi, val_hi))
 
         debug = cv2.cvtColor((hued[:, :, None] != 0) * hsv, cv2.COLOR_HSV2BGR)
@@ -129,10 +129,10 @@ class BagServer:
         return filtered
 
     def _process_centroids(self, contours):
-        centroids2D = []
-        centroids3D = []
-        handleLeft = []
-        handleRight = []
+        centroids2D = None
+        centroids3D = None
+        handleLeft = None
+        handleRight = None
 
         caminfo_proxy = rospy.ServiceProxy(self._caminfo_service, CamInfoSrv)
         caminfo = caminfo_proxy().cam_info
@@ -186,7 +186,7 @@ class BagServer:
             self._generate_bag(point, i)
             self._generate_ray(Point(head_origin[0], head_origin[1], head_origin[2]), point, i)
 
-        return centroids2D, centroids3D, handleLeftPoint, handleRightPoint
+        return centroids2D, centroids3D, handleLeft, handleRight
 
     def _generate_bag(self, point, i):
         marker = Marker()

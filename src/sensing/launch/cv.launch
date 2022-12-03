@@ -2,7 +2,7 @@
     <!-- arguments -->
     <arg name="base_frame" default="base"/>
     <arg name="table_frame" default="table"/>
-    <arg name="head_frame" default="head_camera"/>
+    <arg name="head_frame" default="reference/head_camera"/>
 
     <arg name="image_service" default="/sensing/image"/>
     <arg name="caminfo_service" default="/sensing/caminfo"/>
@@ -52,16 +52,16 @@
     </node>
      <node name="bag_server" pkg="sensing" type="bag_server.py" 
     required="true" output="screen" args="">
-        <!-- <param name="x_lo" type="int" value="470"/>
+        <param name="x_lo" type="int" value="470"/>
         <param name="x_hi" type="int" value="600"/>
         <param name="y_lo" type="int" value="480"/>
-        <param name="y_hi" type="int" value="1000"/> -->
-        <param name="bag_hue_lo" type="int" value="10"/>
-        <param name="bag_hue_hi" type="int" value="20"/>
-        <param name="bag_sat_lo" type="int" value="250"/>
-        <param name="bag_sat_hi" type="int" value="255"/>
-        <param name="bag_val_lo" type="int" value="0"/>
-        <param name="bag_val_hi" type="int" value="255"/>
+        <param name="y_hi" type="int" value="1000"/>
+        <param name="hue_lo" type="int" value="10"/>
+        <param name="hue_hi" type="int" value="20"/>
+        <param name="sat_lo" type="int" value="250"/>
+        <param name="sat_hi" type="int" value="255"/>
+        <param name="val_lo" type="int" value="0"/>
+        <param name="val_hi" type="int" value="255"/>
         <param name="bag_height" type="double" value="0.35"/>
         <param name="bag_length" type="double" value="0.30"/>
         <param name="bag_width" type="double" value="0.15"/>
