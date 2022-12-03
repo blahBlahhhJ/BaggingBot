@@ -1,2 +1,4 @@
 ---
-geometry_msgs/Point bag
+geometry_msgs/Point[] bag
+geometry_msgs/Point[] handleLeft
+geometry_msgs/Point[] handleRight

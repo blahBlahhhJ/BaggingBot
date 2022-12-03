@@ -34,8 +34,8 @@ class BagServer:
         rospy.wait_for_service(self._image_service)
         rospy.wait_for_service(self._caminfo_service)
 
-        centroid = self._get_centroid()
-        return BagSrvResponse(centroid)
+        centroid, centroidHandleLeft, centroidHandleRight = self._get_centroid()
+        return BagSrvResponse(centroid, centroidHandleLeft, centroidHandleRight)
 
     def _load_parameters(self):
         try:
@@ -56,7 +56,7 @@ class BagServer:
             # cv stuff
             img = self._get_image()
             contours = self._process_contours(img)
-            centroids2D, centroids3D = self._process_centroids(contours)
+            centroids2D, centroids3D, centroidsHandleLeft, centroidsHandleRight = self._process_centroids(contours)
 
             self.cv_debug(img, contours, centroids2D)
 
@@ -65,7 +65,7 @@ class BagServer:
             cv2.destroyAllWindows()
             return []
     
-        return centroids3D
+        return centroids3D, centroidsHandleLeft, centroidsHandleRight
 
     def _get_transform(self, source, target):
         t = rospy.Time()
@@ -186,7 +186,7 @@ class BagServer:
             self._generate_bag(point, i)
             self._generate_ray(Point(head_origin[0], head_origin[1], head_origin[2]), point, i)
 
-        return centroids2D, centroids3D
+        return centroids2D, centroids3D, handleLeftPoint, handleRightPoint
 
     def _generate_bag(self, point, i):
         marker = Marker()
