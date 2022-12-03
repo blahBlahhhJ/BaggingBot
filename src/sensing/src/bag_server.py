@@ -34,8 +34,8 @@ class BagServer:
         rospy.wait_for_service(self._image_service)
         rospy.wait_for_service(self._caminfo_service)
 
-        centroid, centroidHandleLeft, centroidHandleRight = self._get_centroid()
-        return BagSrvResponse(centroid, centroidHandleLeft, centroidHandleRight)
+        centroid = self._get_centroid()
+        return BagSrvResponse(centroid)
 
     def _load_parameters(self):
         try:
@@ -55,8 +55,9 @@ class BagServer:
         try:
             # cv stuff
             img = self._get_image()
+            # np.save('/home/cc/ee106a/fa22/class/ee106a-abi/ros_workspaces/proj/assets/bag.npy', img)
             contours = self._process_contours(img)
-            centroids2D, centroids3D, centroidsHandleLeft, centroidsHandleRight = self._process_centroids(contours)
+            centroids2D, centroids3D, handle = self._process_centroids(contours)
 
             self.cv_debug(img, contours, centroids2D)
 
@@ -65,7 +66,7 @@ class BagServer:
             cv2.destroyAllWindows()
             return []
     
-        return centroids3D, centroidsHandleLeft, centroidsHandleRight
+        return handle[0]
 
     def _get_transform(self, source, target):
         t = rospy.Time()
@@ -117,22 +118,22 @@ class BagServer:
         print(table_mask.shape, hued.shape)
         masked = table_mask * hued
 
-        debug = cv2.cvtColor((masked[:, :, None] != 0) * hsv, cv2.COLOR_HSV2BGR)
+        debug = cv2.cvtColor((table_mask[:, :, None] != 1) * hsv, cv2.COLOR_HSV2BGR)
         cv2.imshow("debug_mask", debug)
         cv2.waitKey(0)
         
         # contour
         contours, _ = cv2.findContours(masked, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        thresh = 10000
+        thresh = 25 # 10000
         filtered = [cnt for cnt in contours if cv2.contourArea(cnt) > thresh]
         print('got', str(len(filtered)), 'contours')
+
         return filtered
 
     def _process_centroids(self, contours):
-        centroids2D = None
-        centroids3D = None
-        handleLeft = None
-        handleRight = None
+        centroids2D = []
+        centroids3D = []
+        handle = []
 
         caminfo_proxy = rospy.ServiceProxy(self._caminfo_service, CamInfoSrv)
         caminfo = caminfo_proxy().cam_info
@@ -148,11 +149,11 @@ class BagServer:
 
         bag_height = rospy.get_param('~bag_height')
         bag_width = rospy.get_param('~bag_width')
-        bag_handle_height = rospy.get_param('~bag_handle_height')
+        bag_handle_offset = rospy.get_param('~bag_handle_offset')
 
         p = head_origin = (self.head2base @ origin)[:3]
         x = table_origin = (self.table2base @ origin)[:3]
-        x[2] += bag_height # use table+cube height plane
+        x[2] += bag_width # use table+bag height plane
         w = table_normal = (self.table2base @ normal)[:3]
         b = -w @ x  # table equation: wx + b = 0
 
@@ -175,24 +176,28 @@ class BagServer:
             point = Point(centroid[0], centroid[1], centroid[2])
             centroids3D.append(point)
 
-            handleLeftPoint = Point(centroid[0], centroid[1] + bag_width / 2, centroid[2] + bag_handle_height / 2)
-            handleRightPoint = Point(centroid[0], centroid[1] - bag_width / 2, centroid[2] + bag_handle_height / 2)
-            handleLeft.append(handleLeftPoint)
-            handleRight.append(handleRightPoint)
+            bag_opening_center = Point(centroid[0], centroid[1] - bag_handle_offset, centroid[2] - bag_width / 2)
+            handle.append(bag_opening_center)
 
-            self._generate_bag_handle(handleLeftPoint, i, "l")
-            self._generate_bag_handle(handleLeftPoint, i, "r")
+            self._generate_bag_handle(point, i)
 
             self._generate_bag(point, i)
             self._generate_ray(Point(head_origin[0], head_origin[1], head_origin[2]), point, i)
 
-        return centroids2D, centroids3D, handleLeft, handleRight
+        return centroids2D, centroids3D, handle
 
     def _generate_bag(self, point, i):
+        bag_height = rospy.get_param('~bag_height')
+        bag_width = rospy.get_param('~bag_width')
+        bag_length = rospy.get_param('~bag_length')
+        bag_handle_offset = rospy.get_param('~bag_handle_offset')
+
+        bag_center = Point(point.x, point.y - bag_handle_offset * 2 - bag_height / 2, point.z - bag_width / 2)
+
         marker = Marker()
         marker.header.frame_id = self._base_frame
         marker.header.stamp = rospy.get_rostime()
-        marker.pose.position = point
+        marker.pose.position = bag_center
         marker.ns = 'bag'
         marker.id = i
         marker.type = 1
@@ -200,9 +205,9 @@ class BagServer:
         marker.pose.orientation.y = 0
         marker.pose.orientation.z = 0
         marker.pose.orientation.w = 1.0
-        marker.scale.x = 0.30
-        marker.scale.y = 0.15
-        marker.scale.z = rospy.get_param('~bag_height')
+        marker.scale.x = bag_length
+        marker.scale.y = bag_height
+        marker.scale.z = bag_width
 
         marker.color.r = 0.0
         marker.color.g = 1.0
@@ -232,21 +237,25 @@ class BagServer:
         marker.color.a = 1.0
         self.marker_pub.publish(marker)
 
-    def _generate_bag_handle(self, point, i, pos_name):
+    def _generate_bag_handle(self, point, i):
+        bag_handle_offset = rospy.get_param('~bag_handle_offset')
+
+        handle_center = Point(point.x, point.y - bag_handle_offset, point.z)
+
         marker = Marker()
         marker.header.frame_id = self._base_frame
         marker.header.stamp = rospy.get_rostime()
-        marker.pose.position = point
-        marker.ns = 'bag_handle/' + pos_name
+        marker.pose.position = handle_center
+        marker.ns = 'bag_handle'
         marker.id = i
         marker.type = 1
         marker.pose.orientation.x = 0
         marker.pose.orientation.y = 0
         marker.pose.orientation.z = 0
         marker.pose.orientation.w = 1.0
-        marker.scale.x = 0.05
-        marker.scale.y = 0.01
-        marker.scale.z = rospy.get_param('~bag_handle_height')
+        marker.scale.x = 0.10
+        marker.scale.y = bag_handle_offset * 2
+        marker.scale.z = 0.005
 
         marker.color.r = 0.0
         marker.color.g = 1.0
@@ -263,6 +272,7 @@ class BagServer:
         cv2.imshow("debug", img)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
+
 
 if __name__ == "__main__":
     node = BagServer()
