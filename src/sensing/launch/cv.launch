@@ -48,7 +48,7 @@
         <param name="sat_hi" type="int" value="255"/>
         <param name="val_lo" type="int" value="80"/>
         <param name="val_hi" type="int" value="255"/>
-        <param name="cube_size" type="double" value="0.04"/>
+        <param name="cube_size" type="double" value="0.05"/>
     </node>
      <node name="bag_server" pkg="sensing" type="bag_server.py" 
     required="true" output="screen" args="">
