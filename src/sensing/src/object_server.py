@@ -58,7 +58,7 @@ class ObjectServer:
             contours = self._process_contours(img)
             centroids2D, centroids3D = self._process_centroids(contours)
 
-            self.cv_debug(img, contours, centroids2D)
+            # self.cv_debug(img, contours, centroids2D)
 
         except KeyboardInterrupt:
             print('keyboard interrupt')
@@ -111,9 +111,9 @@ class ObjectServer:
         s[s <= lim] += value
         hsv = cv2.merge((h, s, v))
 
-        debug = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
-        cv2.imshow("debug_hsv", debug)
-        cv2.waitKey(0)
+        # debug = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+        # cv2.imshow("debug_hsv", debug)
+        # cv2.waitKey(0)
 
         # threshold
         hue_lo, hue_hi = rospy.get_param('~hue_lo'), rospy.get_param('~hue_hi')
@@ -121,9 +121,9 @@ class ObjectServer:
         val_lo, val_hi = rospy.get_param('~val_lo'), rospy.get_param('~val_hi')
         hued = cv2.inRange(hsv, (hue_lo, sat_lo, val_lo), (hue_hi, sat_hi, val_hi))
 
-        debug = cv2.cvtColor((hued[:, :, None] != 0) * hsv, cv2.COLOR_HSV2BGR)
-        cv2.imshow("debug_threshold", debug)
-        cv2.waitKey(0)
+        # debug = cv2.cvtColor((hued[:, :, None] != 0) * hsv, cv2.COLOR_HSV2BGR)
+        # cv2.imshow("debug_threshold", debug)
+        # cv2.waitKey(0)
 
         # mask
         x_lo, x_hi = rospy.get_param('~x_lo'), rospy.get_param('~x_hi')
@@ -133,9 +133,9 @@ class ObjectServer:
         print(table_mask.shape, hued.shape)
         masked = table_mask * hued
 
-        debug = cv2.cvtColor((masked[:, :, None] != 0) * hsv, cv2.COLOR_HSV2BGR)
-        cv2.imshow("debug_mask", debug)
-        cv2.waitKey(0)
+        # debug = cv2.cvtColor((masked[:, :, None] != 0) * hsv, cv2.COLOR_HSV2BGR)
+        # cv2.imshow("debug_mask", debug)
+        # cv2.waitKey(0)
         
         # contour
         contours, _ = cv2.findContours(masked, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -183,7 +183,7 @@ class ObjectServer:
             assert lam >= 0
             centroid = p + lam * r
 
-            point = Point(centroid[0], centroid[1], centroid[2])
+            point = Point(centroid[0], centroid[1], centroid[2] - cube_size / 2)
             centroids3D.append(point)
 
             self._generate_cube(point, i)

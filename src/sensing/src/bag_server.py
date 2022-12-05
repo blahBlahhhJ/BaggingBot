@@ -64,13 +64,13 @@ class BagServer:
             img = self._get_image()
             # np.save('/home/cc/ee106a/fa22/class/ee106a-abi/ros_workspaces/proj/assets/bag.npy', img)
             contour = self._process_contours(img)
-            if not contour:
+            if contour is None:
                 return []
             
             centroids2D, centroids3D = self._process_centroids(contour)
             bag_opening_center = Point(centroids3D.x, centroids3D.y - self._bag_handle_offset, centroids3D.z - self._bag_width / 2)
 
-            self.cv_debug(img, contour, centroids2D)
+            # self.cv_debug(img, contour, centroids2D)
 
         except KeyboardInterrupt:
             print('keyboard interrupt')
@@ -107,9 +107,9 @@ class BagServer:
         s[s <= lim] += value
         hsv = cv2.merge((h, s, v))
 
-        debug = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
-        cv2.imshow("debug_hsv", debug)
-        cv2.waitKey(0)
+        # debug = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+        # cv2.imshow("debug_hsv", debug)
+        # cv2.waitKey(0)
 
         # threshold
         hue_lo, hue_hi = rospy.get_param('~hue_lo'), rospy.get_param('~hue_hi')
@@ -117,9 +117,9 @@ class BagServer:
         val_lo, val_hi = rospy.get_param('~val_lo'), rospy.get_param('~val_hi')
         hued = cv2.inRange(hsv, (hue_lo, sat_lo, val_lo), (hue_hi, sat_hi, val_hi))
 
-        debug = cv2.cvtColor((hued[:, :, None] != 0) * hsv, cv2.COLOR_HSV2BGR)
-        cv2.imshow("debug_threshold", debug)
-        cv2.waitKey(0)
+        # debug = cv2.cvtColor((hued[:, :, None] != 0) * hsv, cv2.COLOR_HSV2BGR)
+        # cv2.imshow("debug_threshold", debug)
+        # cv2.waitKey(0)
 
         # mask
         x_lo, x_hi = rospy.get_param('~x_lo'), rospy.get_param('~x_hi')
@@ -129,9 +129,9 @@ class BagServer:
         print(table_mask.shape, hued.shape)
         masked = table_mask * hued
 
-        debug = cv2.cvtColor((table_mask[:, :, None] != 1) * hsv, cv2.COLOR_HSV2BGR)
-        cv2.imshow("debug_mask", debug)
-        cv2.waitKey(0)
+        # debug = cv2.cvtColor((table_mask[:, :, None] != 1) * hsv, cv2.COLOR_HSV2BGR)
+        # cv2.imshow("debug_mask", debug)
+        # cv2.waitKey(0)
         
         # contour
         contours, _ = cv2.findContours(masked, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -269,8 +269,7 @@ class BagServer:
     def cv_debug(self, img, contours, centroids2D):
         cv2.drawContours(img, contours, -1, (0, 255, 0, 2))
 
-        for centroid in centroids2D:
-            cv2.circle(img, centroid, 1, (0, 0, 255), 2)
+        cv2.circle(img, centroids2D, 1, (0, 0, 255), 2)
 
         cv2.imshow("debug", img)
         cv2.waitKey(0)
