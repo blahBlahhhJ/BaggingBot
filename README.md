@@ -12,12 +12,13 @@ ee106a final project
 * bag_server.py?
     * should return some handle location to pick up the bag
 
-### Planning
-Not designed yet. maybe follow lab7 structure?
-
-### guess what this is
-
-
-notes: 
-1. sreset
-2. blue and green works
+### Transport
+* Execution.py:
+   * Main driver cntaining demo sequence
+* sawyer_node.py:
+   * Sawyer control node that wraps around motion planner & action server
+   * Accepts simple directives based on input objects
+* cv_serv.py:
+   * Glue logic that interacts with sensing package
+* path_planner.py:
+   * slightly tuned path planner library from previous lab
