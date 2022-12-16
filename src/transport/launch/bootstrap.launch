@@ -1,0 +1,17 @@
+<launch>
+
+  <arg name="fast_speed" default="0.4" />
+  <arg name="slow_speed" default="0.2" />
+  <!-- more params? -->
+
+  <include file="$(find sensing)/launch/cv.launch"/>
+
+  <node name="sawyer_node" pkg="transport" type="sawyer_node.py" output="screen" required="true">
+    <param name="fast_speed" value="$(arg fast_speed)" />
+    <param name="slow_speed" value="$(arg slow_speed)" />
+  </node>
+  <node name="cv_node" pkg="transport" type="cv_serv.py" output="screen" required="true">
+    
+  </node>
+  <!-- more node that needs to boot before demo? -->
+</launch>

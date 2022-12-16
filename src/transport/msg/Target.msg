@@ -1,0 +1,3 @@
+string ident # "table" | "block" | "bag" | "bot" | ...
+geometry_msgs/Vector3 dimension # lengthwise *ALONG THE AXIS* (x, y, z)
+geometry_msgs/Pose pose # Pose as CoG

@@ -1,0 +1,12 @@
+<launch>
+
+  <arg name="cv_service_name" default="/cv_service" />
+  <arg name="sawyer_controller_name" default="/sawyer_controller" />
+
+  <node name="demo_node" pkg="transport" type="Execution.py" output="screen" required="true">
+    <param name="cv_service_name" value="$(arg cv_service_name)" />
+    <param name="sawyer_controller_name" value="$(arg sawyer_controller_name)" />
+    <!-- more params? -->
+  </node>
+
+</launch>

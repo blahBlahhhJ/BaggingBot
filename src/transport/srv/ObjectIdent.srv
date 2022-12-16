@@ -1,0 +1,4 @@
+sensor_msgs/Image frame
+---
+string info
+Target[] objects
